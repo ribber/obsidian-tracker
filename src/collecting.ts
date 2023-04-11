@@ -775,39 +775,76 @@ export function collectDataFromFileMeta(
 
 // In form 'key::value', named group 'value' from plugin
 export function collectDataFromDvField(
-    content: string,
-    query: Query,
-    renderInfo: RenderInfo,
-    dataMap: DataMap,
-    xValueMap: XValueMap
+  content: string,
+  query: Query,
+  renderInfo: RenderInfo,
+  dataMap: DataMap,
+  xValueMap: XValueMap
 ): boolean {
-    let dvTarget = query.getTarget();
-    if (query.getParentTarget()) {
-        dvTarget = query.getParentTarget(); // use parent tag name for multiple values
-    }
-    // Dataview ask user to add dashes for spaces as search target
-    // So a dash may stands for a real dash or a space
-    dvTarget = dvTarget.replace("-", "[\\s\\-]");
+  let dvTarget = query.getTarget();
+  if (query.getParentTarget()) {
+    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
+  }
+  // Dataview ask user to add dashes for spaces as search target
+  // So a dash may stands for a real dash or a space
+  dvTarget = dvTarget.replace("-", "[\\s\\-]");
 
-    // Test this in Regex101
-    // remember '\s' includes new line
-    // (^| |\t)\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
-    let strRegex =
-        "(^| |\\t)\\*{0,2}" +
-        dvTarget +
-        "\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:" + 
-        WordCharacters +
-        "]*))(\\r\\?\\n|\\r|$)";
-    // console.log(strRegex);
-
-    return extractDataUsingRegexWithMultipleValues(
-        content,
-        strRegex,
-        query,
-        dataMap,
-        xValueMap,
-        renderInfo
+  // Test this in Regex101
+  // remember '\s' includes new line
+  // (^| |\t)\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\r?\n|\r|$)
+  let strRegex =
+    "(^| |\\t)\\*{0,2}" +
+    dvTarget +
+    "\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:" +
+    WordCharacters +
+    "]*))(\\r\\?\\n|\\r|$)";
+  let outline = extractDataUsingRegexWithMultipleValues(
+      content,
+      strRegex,
+      query,
+      dataMap,
+      xValueMap,
+      renderInfo
     );
+  let inline = collectDataFromInlineDvField(content, query, renderInfo, dataMap, xValueMap)
+  return outline || inline
+}
+
+// In form 'key::value', named group 'value' from plugin
+export function collectDataFromInlineDvField(
+  content: string,
+  query: Query,
+  renderInfo: RenderInfo,
+  dataMap: DataMap,
+  xValueMap: XValueMap
+): boolean {
+  let dvTarget = query.getTarget();
+  if (query.getParentTarget()) {
+    dvTarget = query.getParentTarget(); // use parent tag name for multiple values
+  }
+  // Dataview ask user to add dashes for spaces as search target
+  // So a dash may stands for a real dash or a space
+  dvTarget = dvTarget.replace("-", "[\\s\\-]");
+
+  // Test this in Regex101
+  // remember '\s' includes new line
+  // ^.*?(\[|\()\*{0,2}dvTarget\*{0,2}(::[ |\t]*(?<value>[\d\.\/\-\w,@; \t:]*))(\]|\)).*?
+  let strRegex =
+    "^.*?(\\[|\\()\\*{0,2}" +
+    dvTarget +
+    "\\*{0,2}(::[ |\\t]*(?<value>[\\d\\.\\/\\-,@; \\t:" +
+    WordCharacters +
+    "]*))(\\]|\\)).*?$";
+  // console.log(strRegex);
+
+  return extractDataUsingRegexWithMultipleValues(
+    content,
+    strRegex,
+    query,
+    dataMap,
+    xValueMap,
+    renderInfo
+  );
 }
 
 // In form 'regex with value', name group 'value' from users
@@ -844,3 +881,4 @@ export function collectDataFromTask(
         renderInfo
     );
 }
+
